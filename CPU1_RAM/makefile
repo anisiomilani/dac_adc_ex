@@ -15,6 +15,7 @@ ORDERED_OBJS += \
 "./main.obj" \
 "./device/F2837xD_CodeStartBranch.obj" \
 "./device/device.obj" \
+"./src/scicomm.obj" \
 "./utils/dac_buffer_values.obj" \
 "../2837xD_RAM_lnk_cpu1.cmd" \
 "C:/ti/c2000/C2000Ware_5_04_00_00/driverlib/f2837xd/driverlib/ccs/Debug/driverlib.lib" \
@@ -30,9 +31,11 @@ RMDIR := RMDIR /S/Q
 -include sources.mk
 -include subdir_vars.mk
 -include device/subdir_vars.mk
+-include src/subdir_vars.mk
 -include utils/subdir_vars.mk
 -include subdir_rules.mk
 -include device/subdir_rules.mk
+-include src/subdir_rules.mk
 -include utils/subdir_rules.mk
 -include objects.mk
 
@@ -144,15 +147,15 @@ all: $(OBJS) $(CMD_SRCS) $(LIB_SRCS) $(GEN_CMDS)
 dac_adc_ex.out: $(OBJS) $(CMD_SRCS) $(LIB_SRCS) $(GEN_CMDS)
 	@echo 'Building target: "$@"'
 	@echo 'Invoking: C2000 Linker'
-	"C:/ti/ccs1281/ccs/tools/compiler/ti-cgt-c2000_22.6.1.LTS/bin/cl2000" -v28 -ml -mt --cla_support=cla2 --float_support=fpu32 --tmu_support=tmu0 --vcu_support=vcu2 -Ooff --define=_LAUNCHXL_F28379D --define=DEBUG --define=CPU1 --define=RAM --c99 --diag_suppress=10063 --diag_warning=225 --diag_wrap=off --display_error_number --gen_func_subsections=on --abi=eabi -z -m"dac_adc_ex.map" --heap_size=0x100 --stack_size=0x200 --warn_sections -i"C:/Users/guilh/Documents/GitC2000/dac_adc_ex/utils" -i"C:/ti/ccs1281/ccs/tools/compiler/ti-cgt-c2000_22.6.1.LTS/lib" -i"C:/ti/c2000/C2000Ware_5_04_00_00" -i"C:/Users/guilh/Documents/GitC2000/dac_adc_ex/CPU1_RAM/syscfg" -i"C:/ti/ccs1281/ccs/tools/compiler/ti-cgt-c2000_22.6.1.LTS/include" --reread_libs --define=RAM --diag_wrap=off --display_error_number --xml_link_info="dac_adc_ex_linkInfo.xml" --entry_point=code_start --rom_model -o "dac_adc_ex.out" $(ORDERED_OBJS)
+	"C:/ti/ccs1281/ccs/tools/compiler/ti-cgt-c2000_22.6.1.LTS/bin/cl2000" -v28 -ml -mt --cla_support=cla2 --float_support=fpu32 --tmu_support=tmu0 --vcu_support=vcu2 -Ooff --define=_LAUNCHXL_F28379D --define=DEBUG --define=CPU1 --define=RAM --c99 --diag_suppress=10063 --diag_warning=225 --diag_wrap=off --display_error_number --gen_func_subsections=on --abi=eabi -z -m"dac_adc_ex.map" --heap_size=0x100 --stack_size=0x200 --warn_sections -i"C:/ti/tarefa aula/dac_adc_ex/utils" -i"C:/ti/ccs1281/ccs/tools/compiler/ti-cgt-c2000_22.6.1.LTS/lib" -i"C:/ti/c2000/C2000Ware_5_04_00_00" -i"C:/ti/tarefa aula/dac_adc_ex/CPU1_RAM/syscfg" -i"C:/ti/ccs1281/ccs/tools/compiler/ti-cgt-c2000_22.6.1.LTS/include" --reread_libs --define=RAM --diag_wrap=off --display_error_number --xml_link_info="dac_adc_ex_linkInfo.xml" --entry_point=code_start --rom_model -o "dac_adc_ex.out" $(ORDERED_OBJS)
 	@echo 'Finished building target: "$@"'
 	@echo ' '
 
 # Other Targets
 clean:
 	-$(RM) $(GEN_MISC_FILES__QUOTED)$(GEN_FILES__QUOTED)$(EXE_OUTPUTS__QUOTED)
-	-$(RM) "syscfg\board.obj" "syscfg\c2000ware_libraries.obj" "main.obj" "device\F2837xD_CodeStartBranch.obj" "device\device.obj" "utils\dac_buffer_values.obj" 
-	-$(RM) "syscfg\board.d" "syscfg\c2000ware_libraries.d" "main.d" "device\device.d" "utils\dac_buffer_values.d" 
+	-$(RM) "syscfg\board.obj" "syscfg\c2000ware_libraries.obj" "main.obj" "device\F2837xD_CodeStartBranch.obj" "device\device.obj" "src\scicomm.obj" "utils\dac_buffer_values.obj" 
+	-$(RM) "syscfg\board.d" "syscfg\c2000ware_libraries.d" "main.d" "device\device.d" "src\scicomm.d" "utils\dac_buffer_values.d" 
 	-$(RM) "device\F2837xD_CodeStartBranch.d" 
 	-$(RMDIR) $(GEN_MISC_DIRS__QUOTED)
 	-@echo 'Finished clean'

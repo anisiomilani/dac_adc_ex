@@ -51,6 +51,7 @@ void Board_init()
 	ADC_init();
 	CPUTIMER_init();
 	DAC_init();
+	SCI_init();
 	INTERRUPT_init();
 
 	EDIS;
@@ -67,6 +68,17 @@ void PinMux_init()
 	// PinMux for modules assigned to CPU1
 	//
 	
+	//
+	// SCIA -> SCI0 Pinmux
+	//
+	GPIO_setPinConfig(SCI0_SCIRX_PIN_CONFIG);
+	GPIO_setPadConfig(SCI0_SCIRX_GPIO, GPIO_PIN_TYPE_STD | GPIO_PIN_TYPE_PULLUP);
+	GPIO_setQualificationMode(SCI0_SCIRX_GPIO, GPIO_QUAL_ASYNC);
+
+	GPIO_setPinConfig(SCI0_SCITX_PIN_CONFIG);
+	GPIO_setPadConfig(SCI0_SCITX_GPIO, GPIO_PIN_TYPE_STD | GPIO_PIN_TYPE_PULLUP);
+	GPIO_setQualificationMode(SCI0_SCITX_GPIO, GPIO_QUAL_ASYNC);
+
 
 }
 
@@ -217,4 +229,33 @@ void INTERRUPT_init(){
 	// ISR need to be defined for the registered interrupts
 	Interrupt_register(INT_myCPUTIMER1, &INT_myCPUTIMER1_ISR);
 	Interrupt_enable(INT_myCPUTIMER1);
+	
+	// Interrupt Settings for INT_SCI0_RX
+	// ISR need to be defined for the registered interrupts
+	Interrupt_register(INT_SCI0_RX, &INT_SCI0_RX_ISR);
+	Interrupt_enable(INT_SCI0_RX);
 }
+//*****************************************************************************
+//
+// SCI Configurations
+//
+//*****************************************************************************
+void SCI_init(){
+	SCI0_init();
+}
+
+void SCI0_init(){
+	SCI_clearInterruptStatus(SCI0_BASE, SCI_INT_RXFF | SCI_INT_TXFF | SCI_INT_FE | SCI_INT_OE | SCI_INT_PE | SCI_INT_RXERR | SCI_INT_RXRDY_BRKDT | SCI_INT_TXRDY);
+	SCI_clearOverflowStatus(SCI0_BASE);
+	SCI_resetTxFIFO(SCI0_BASE);
+	SCI_resetRxFIFO(SCI0_BASE);
+	SCI_resetChannels(SCI0_BASE);
+	SCI_setConfig(SCI0_BASE, DEVICE_LSPCLK_FREQ, SCI0_BAUDRATE, (SCI_CONFIG_WLEN_8|SCI_CONFIG_STOP_ONE|SCI_CONFIG_PAR_NONE));
+	SCI_disableLoopback(SCI0_BASE);
+	SCI_performSoftwareReset(SCI0_BASE);
+	SCI_enableInterrupt(SCI0_BASE, SCI_INT_RXFF);
+	SCI_setFIFOInterruptLevel(SCI0_BASE, SCI_FIFO_TX0, SCI_FIFO_RX1);
+	SCI_enableFIFO(SCI0_BASE);
+	SCI_enableModule(SCI0_BASE);
+}
+

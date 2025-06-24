@@ -16,6 +16,8 @@ const cputimer1 = cputimer.addInstance();
 const cputimer2 = cputimer.addInstance();
 const dac       = scripting.addModule("/driverlib/dac.js", {}, false);
 const dac1      = dac.addInstance();
+const sci       = scripting.addModule("/driverlib/sci.js", {}, false);
+const sci1      = sci.addInstance();
 
 /**
  * Write custom configuration values to the imported modules.
@@ -50,3 +52,20 @@ dac1.$name            = "DAC0";
 dac1.enableOutput     = true;
 dac1.dacBase          = "DACB_BASE";
 dac1.referenceVoltage = "DAC_REF_ADC_VREFHI";
+
+sci1.$name                      = "SCI0";
+sci1.selectRegisteredInterrupts = ["registerRxInt"];
+sci1.enabledFIFOInterrupts      = ["SCI_INT_RXFF"];
+sci1.rxFifo                     = "SCI_FIFO_RX1";
+sci1.sci.scirxdPin.$assign      = "GPIO43";
+sci1.sci.scitxdPin.$assign      = "GPIO42";
+sci1.rxQual.$name               = "myGPIOQUAL0";
+sci1.txQual.$name               = "myGPIOQUAL1";
+sci1.sciRXInt.enableInterrupt   = true;
+
+/**
+ * Pinmux solution for unlocked pins/peripherals. This ensures that minor changes to the automatic solver in a future
+ * version of the tool will not impact the pinmux you originally saw.  These lines can be completely deleted in order to
+ * re-solve from scratch.
+ */
+sci1.sci.$suggestSolution = "SCIA";
