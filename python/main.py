@@ -55,6 +55,7 @@ def main():
         print(f"Detalhe: {e}")
         print("Verifique se a porta esta correta e se nenhum outro programa a esta usando.")
 
+
 def send_int(ser_connection):
     """
     Pede um numero ao usuario, o empacota e envia para o microcontrolador.

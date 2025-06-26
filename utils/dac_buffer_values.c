@@ -1,16 +1,15 @@
 /*
- * Arquivo gerado por script Python em 2025-06-24 17:43:42
+ * Arquivo gerado por script Python em 2025-06-26 17:42:58
  * Frequência da Onda: 50.0 Hz
  * Amostras por Ciclo: 200
- * Resolução do DAC: 12 bits (Valores de 0 a 4095)
- * Amplitude da Onda (Normalizada 0-1): 1.0
- * Frequência de Amostragem Necessária (para Timer): 10000.00 Hz
- * Valor PRD Recomendado para o Timer: 19999
+ * Resolução do DAC: 12 bits
+ * Amplitude Normalizada: 1.0
+ * Frequência de Amostragem: 10000.00 Hz
+ * PRD Timer: 19999
  */
 
 #include <stdint.h>
 
-// Vetor contendo os valores para o DAC
 const uint16_t dac_buffer[200] = {
     2048,     2112,     2176,     2240,     2304,     2368,     2431,     2494,     2557,     2619,
     2680,     2741,     2801,     2861,     2919,     2977,     3034,     3090,     3145,     3198,

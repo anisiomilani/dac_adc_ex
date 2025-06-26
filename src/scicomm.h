@@ -15,10 +15,10 @@
 typedef enum
 {
     CMD_NONE = 0,
-    CMD_RECEIVE_INT,
-    CMD_SEND_INT,
-    CMD_RECEIVE_VECTOR = 3,
-    CMD_SEND_VECTOR = 4,
+    CMD_RECEIVE_VECTOR = 1,
+    CMD_SEND_VECTOR = 2,
+    // CMD_RECEIVE_INT,
+     // CMD_SEND_INT,
     CMD_COUNT
 
 } SCI_Command_e;
@@ -31,8 +31,8 @@ typedef struct
 } Protocol_Header_t;
 
 
-int protocolReceiveInt(unsigned int sci_base);
-void protocolSendInt(unsigned int sci_base,int data);
+//int protocolReceiveInt(unsigned int sci_base);
+//void protocolSendInt(unsigned int sci_base,int data);
 void protocolReceiveVector(uint32_t base, int16_t *dest, uint16_t qtd);
 void protocolSendVector(uint32_t base, int16_t *data, uint16_t qtd);
 

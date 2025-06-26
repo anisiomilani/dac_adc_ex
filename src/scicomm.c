@@ -8,7 +8,7 @@
 #include "device.h"
 #include "scicomm.h"
 
-
+/*
 int protocolReceiveInt(unsigned int sci_base)
 {
     uint16_t buffer[INT_SIZE];
@@ -24,7 +24,7 @@ void protocolSendInt(unsigned int sci_base,int data)
 
     SCI_writeCharArray(sci_base, txBuf, INT_SIZE);
 }
-
+*/
 
 void protocolReceiveVector(uint32_t base, int16_t *dest, uint16_t qtd)
 {

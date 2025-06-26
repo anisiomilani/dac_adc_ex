@@ -10,7 +10,7 @@
 // Main
 //
 #define TAM_BUFFER_DAC 200
-#define TAM_BUFFER_ADC 100
+#define TAM_BUFFER_ADC 200
 extern uint16_t dac_buffer[];
 volatile uint16_t adc_buffer[TAM_BUFFER_ADC];
 volatile float gain = 1.0f;
@@ -19,9 +19,8 @@ volatile float gain = 1.0f;
 //DADOS PARA CONEXÃO SERIAL PYTHON COM CCS
 volatile Protocol_Header_t g_prot_header = {CMD_NONE,0};
 volatile int g_dado;
-#define VETOR_TAM_MAX 4
-int16_t g_vetor[VETOR_TAM_MAX];
-
+volatile uint16_t  g_vetor[TAM_BUFFER_DAC];
+volatile uint16_t g_vetor_qtd = 0;
 
 
 void main(void)
@@ -54,6 +53,7 @@ void main(void)
                {
                    switch (g_prot_header.cmd)
                    {
+                   /*
                        case CMD_RECEIVE_INT:
                            g_dado = protocolReceiveInt(SCI0_BASE);
                            break;
@@ -61,25 +61,20 @@ void main(void)
                        case CMD_SEND_INT:
                            protocolSendInt(SCI0_BASE, g_dado);
                            break;
-
+                    */
                        case CMD_RECEIVE_VECTOR:
                        {
                            uint16_t num_elem = g_prot_header.data_len / 2;
-                           if (num_elem > VETOR_TAM_MAX)
-                               num_elem = VETOR_TAM_MAX;
+                           if (num_elem > TAM_BUFFER_DAC)
+                               num_elem = TAM_BUFFER_DAC;
 
                            protocolReceiveVector(SCI0_BASE, g_vetor, num_elem);
+                           g_vetor_qtd = num_elem; //salvo a quantidade de valores recebidos
                            break;
                        }
                        case CMD_SEND_VECTOR:
                        {
-                           uint16_t qtd;
-                           qtd = protocolReceiveInt(SCI0_BASE); // Recebe a quantidade desejada
-
-                           if (qtd > VETOR_TAM_MAX)
-                               qtd = VETOR_TAM_MAX;
-
-                           protocolSendVector(SCI0_BASE, g_vetor, qtd); // Envia vetor
+                           protocolSendVector(SCI0_BASE, adc_buffer, g_vetor_qtd); // Envia vetor
                            break;
                        }
                    }
@@ -107,10 +102,12 @@ __interrupt void INT_ADC0_1_ISR(void)
 __interrupt void INT_myCPUTIMER1_ISR(void)
 {
     static uint16_t cnt_dac = 0;
-    DAC_setShadowValue(DAC0_BASE, (uint16_t) (gain*dac_buffer[cnt_dac]));
+   // DAC_setShadowValue(DAC0_BASE, (uint16_t) (gain*dac_buffer[cnt_dac]));
+    DAC_setShadowValue(DAC0_BASE, (uint16_t)(gain * g_vetor[cnt_dac]));
+
     cnt_dac = (cnt_dac+1)%TAM_BUFFER_DAC;
 
-    // 0+10%200 o resto da diviao ate chegar em 1999+1 %200 o resto torna zero
+    // 0+10%200 o resto da diviao ate chegar em 19999+1 %200 o resto torna zero
 }
 
 // Rotina de Interrupção da SCI (Recepção)
@@ -127,3 +124,4 @@ __interrupt void INT_SCI0_RX_ISR(void)
 
     Interrupt_clearACKGroup(INT_SCI0_RX_INTERRUPT_ACK_GROUP);
 }
+
