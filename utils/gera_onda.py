@@ -4,6 +4,7 @@ import serial
 import struct
 import time
 import matplotlib.pyplot as plt
+import numpy as np
 
 SERIAL_PORT = 'COM6'
 BAUD_RATE = 115200
@@ -13,22 +14,31 @@ BAUD_RATE = 115200
 CMD_RECEIVE_VECTOR = 1
 CMD_SEND_VECTOR = 2
 
-def gerar_vetor_dac_parametrizado(frequencia_onda, amostras_por_ciclo, dac_bits, amplitude_normalizada):
+def gerar_vetor_dac_parametrizado(frequencia_onda, amostras_por_ciclo, dac_bits, amplitude_normalizada,porcentagem_quinta,porcentagem_setima):
     if amostras_por_ciclo <= 0:
         raise ValueError("O número de amostras por ciclo deve ser maior que zero.")
     if dac_bits <= 0:
         raise ValueError("A resolução do DAC em bits deve ser maior que zero.")
     if frequencia_onda <= 0:
         raise ValueError("A frequência da onda deve ser maior que zero.")
+    if porcentagem_quinta < 0:
+        raise ValueError("A porcentagem da frequência de 5º ordem deve ser positiva.")
+    if porcentagem_setima < 0:
+        raise ValueError("A porcentagem da frequência de 7º ordem deve ser positiva.")
     if not (0 <= amplitude_normalizada <= 1):
         raise ValueError("A amplitude normalizada deve estar entre 0 e 1.")
 
     max_dac_val = (2**dac_bits) - 1
     offset = max_dac_val / 2.0
     amplitude_dac = amplitude_normalizada * (max_dac_val / 2.0)
-
+    amplitude_dac_quinta = (porcentagem_quinta/100) * amplitude_dac
+    amplitude_dac_setima = (porcentagem_setima/100) * amplitude_dac
     dac_valores = [
-        int(round(max(0, min(offset + amplitude_dac * math.sin(2 * math.pi * i / amostras_por_ciclo), max_dac_val))))
+        int(round(max(0, min(offset + 
+                             amplitude_dac * math.sin(2 * math.pi * i / amostras_por_ciclo)+
+                             amplitude_dac_quinta * math.sin(5 * 2 * math.pi * i / amostras_por_ciclo) +
+                             amplitude_dac_setima * math.sin(7 * 2 * math.pi * i / amostras_por_ciclo),
+                             max_dac_val))))
         for i in range(amostras_por_ciclo)
     ]
 
@@ -45,7 +55,23 @@ def plotar_senoide(dac_valores):
     plt.tight_layout()
     plt.show()
 
-def salvar_vetor_em_arquivo_c(filename, vetor_dac, freq_onda, num_amostras, res_dac, amp_norm, freq_amostragem, prd_timer_val):
+def plotar_dac_adc_comparativo(dac_valores, adc_valores):
+    if not dac_valores or not adc_valores:
+        print("⚠️  DAC ou ADC vazio, impossível plotar.")
+        return
+
+    plt.figure(figsize=(10, 4))
+    plt.plot(dac_valores, label='DAC Enviado', marker='o', linestyle='-', color='blue')
+    plt.plot(adc_valores, label='ADC Recebido', marker='x', linestyle='--', color='red')
+    plt.title("Comparação DAC vs ADC")
+    plt.xlabel("Amostra")
+    plt.ylabel("Valor")
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+
+def salvar_vetor_em_arquivo_c(filename, vetor_dac, freq_onda, num_amostras, res_dac, amp_norm, porc_amplitude_quinta, porc_amplitude_setima, freq_amostragem, prd_timer_val):
     current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     with open(filename, "w") as f_c:
         f_c.write(f"/*\n * Arquivo gerado por script Python em {current_time}\n")
@@ -53,6 +79,8 @@ def salvar_vetor_em_arquivo_c(filename, vetor_dac, freq_onda, num_amostras, res_
         f_c.write(f" * Amostras por Ciclo: {num_amostras}\n")
         f_c.write(f" * Resolução do DAC: {res_dac} bits\n")
         f_c.write(f" * Amplitude Normalizada: {amp_norm}\n")
+        f_c.write(f" * Porcentagem 5º: {porc_amplitude_quinta}\n")
+        f_c.write(f" * Porcentagem 7º: {porc_amplitude_setima}\n")
         f_c.write(f" * Frequência de Amostragem: {freq_amostragem:.2f} Hz\n")
         f_c.write(f" * PRD Timer: {int(round(prd_timer_val))}\n */\n\n")
         f_c.write(f"#include <stdint.h>\n\nconst uint16_t dac_buffer[{len(vetor_dac)}] = {{\n")
@@ -72,23 +100,27 @@ def senoide():
         num_amostras = int(input("Amostras por ciclo: "))
         res_dac = int(input("Resolução do DAC (bits): "))
         amplitude_norm = float(input("Amplitude normalizada (0.0 a 1.0): "))
+        porc_amplitude_quinta = float(input("Porcentagem da 5ª Harmônica: "))
+        porc_amplitude_setima = float(input("Porcentagem da 7ª Harmônica: "))
+        vetor_dac, freq_amostragem = gerar_vetor_dac_parametrizado(freq_onda, num_amostras, res_dac, amplitude_norm, porc_amplitude_quinta, porc_amplitude_setima)
 
-        vetor_dac, freq_amostragem = gerar_vetor_dac_parametrizado(freq_onda, num_amostras, res_dac, amplitude_norm)
-
-        clock_timer = 200_000_000
+        clock_timer = 200_000_000 / 4
         prd_timer = (clock_timer / freq_amostragem) - 1
+
 
         print("\n--- Resultados ---")
         print(f"Frequência da onda: {freq_onda} Hz")
         print(f"Amostras por ciclo: {num_amostras}")
         print(f"Resolução DAC: {res_dac} bits")
         print(f"Amplitude normalizada: {amplitude_norm}")
+        print(f"Porcentagem 5º: {porc_amplitude_quinta}")
+        print(f"Porcentagem 7º: {porc_amplitude_setima}")
         print(f"Frequência de amostragem: {freq_amostragem:.2f} Hz")
         print(f"Valor PRD timer: {int(round(prd_timer))}")
         print(f"Mínimo valor DAC: {min(vetor_dac)}")
         print(f"Máximo valor DAC: {max(vetor_dac)}")
 
-        salvar_vetor_em_arquivo_c("dac_buffer_values.c", vetor_dac, freq_onda, num_amostras, res_dac, amplitude_norm, freq_amostragem, prd_timer)
+        salvar_vetor_em_arquivo_c("dac_buffer_values.c", vetor_dac, freq_onda, num_amostras, res_dac, amplitude_norm, porc_amplitude_quinta, porc_amplitude_setima, freq_amostragem, prd_timer)
         plotar_senoide(vetor_dac)
 
         return vetor_dac, freq_amostragem
@@ -100,6 +132,75 @@ def senoide():
         print(f"Erro inesperado: {e}")
         return [], 0
 
+def comparar_fft_dac_adc(dac_valores, adc_valores, freq_amostragem_dac, freq_amostragem_adc):
+    if not dac_valores or not adc_valores:
+        print("⚠️ DAC ou ADC vazio, impossível comparar FFT.")
+        return
+    
+    # Preparar arrays
+    n_dac = len(dac_valores)
+    n_adc = len(adc_valores)
+
+    dac_arr = np.array(dac_valores) - np.mean(dac_valores)
+    adc_arr = np.array(adc_valores) - np.mean(adc_valores)
+
+    # FFT
+    fft_dac = np.fft.fft(dac_arr)
+    fft_adc = np.fft.fft(adc_arr)
+
+    # Frequências
+    freq_dac = np.fft.fftfreq(n_dac, d=1/freq_amostragem_dac)
+    freq_adc = np.fft.fftfreq(n_adc, d=1/freq_amostragem_adc)
+
+    # Metades positivas
+    metade_dac = n_dac // 2
+    metade_adc = n_adc // 2
+
+    mag_dac = np.abs(fft_dac)[:metade_dac] * 2 / n_dac
+    mag_adc = np.abs(fft_adc)[:metade_adc] * 2 / n_adc
+
+    # Plotagem lado a lado
+    plt.figure(figsize=(14,6))
+
+    plt.subplot(1, 2, 1)
+    plt.plot(freq_dac[:metade_dac], mag_dac, color='blue')
+    plt.title("FFT DAC")
+    plt.xlabel("Frequência (Hz)")
+    plt.ylabel("Magnitude")
+    plt.grid(True)
+
+    plt.subplot(1, 2, 2)
+    plt.plot(freq_adc[:metade_adc], mag_adc, color='red')
+    plt.title("FFT ADC")
+    plt.xlabel("Frequência (Hz)")
+    plt.ylabel("Magnitude")
+    plt.grid(True)
+
+    plt.tight_layout()
+    plt.show()
+
+def plot_fft_dac(dac_valores, freq_amostragem):
+    if not dac_valores:
+        print("⚠️ Vetor DAC vazio, impossível plotar FFT.")
+        return
+    
+    n = len(dac_valores)
+    dac_arr = np.array(dac_valores)
+    dac_arr = dac_arr- np.mean(dac_arr)  # remove DC
+    fft_dac = np.fft.fft(dac_arr)
+    freq = np.fft.fftfreq(n, d=1/freq_amostragem)
+    metade = n // 2
+    magnitude = np.abs(fft_dac)[:metade] * 2 / n
+
+
+    plt.figure(figsize=(10, 5))
+    plt.plot(freq[:metade], magnitude, color='blue')
+    plt.title("Espectro de Frequência - FFT do DAC")
+    plt.xlabel("Frequência (Hz)")
+    plt.ylabel("Magnitude")
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
 
 def send_vector(ser_connection, vetor):
     try:
@@ -148,8 +249,9 @@ def receive_vector(ser_connection):
         plotar_senoide(vetor)
 
         print(f"\n✅ Vetor recebido ({qtd} valores):")
-        print(list(vetor))
-
+       # print(list(vetor))
+        return vetor
+    
     except Exception as e:
         print(f"Erro ao receber vetor: {e}")
  
@@ -166,11 +268,14 @@ def main():
                 print("1. Gerar vetor senoide")
                 print("2. Enviar vetor DAC")
                 print("3. Receber vetor")
+                print("4. Plotar DAC + ADC")
+                print("5. Plotar FFT do DAC")
+                print("6. Comparar FFT DAC vs ADC")
                 print("0. Sair")
                 opcao = input("Escolha: ")
 
                 if opcao == '1':
-                    vetor_dac, _ = senoide()
+                    vetor_dac, freq_amostragem = senoide()
                 elif opcao == '2':
                     if not vetor_dac:
                         print("⚠️  Primeiro gere a senoide antes de enviar o vetor.")
@@ -178,6 +283,26 @@ def main():
                         send_vector(ser, vetor_dac)
                 elif opcao == '3':
                     receive_vector(ser)
+                elif opcao == '4':
+                    if not vetor_dac:
+                         print("⚠️  Gere o vetor DAC primeiro.")
+                    else:
+                        adc_valores = receive_vector(ser)
+                        if adc_valores:
+                            plotar_dac_adc_comparativo(vetor_dac[:len(adc_valores)], adc_valores)   
+                elif opcao == '5':
+                         if not vetor_dac:
+                             print("⚠️  Gere o vetor DAC primeiro.")
+                         else:
+                             plot_fft_dac(vetor_dac, freq_amostragem)
+
+                elif opcao == '6':
+                          if not vetor_dac:
+                                print("⚠️ Gere o vetor DAC primeiro.")
+                          else:
+                            adc_valores = receive_vector(ser)
+                            if adc_valores:
+                                  comparar_fft_dac_adc(vetor_dac, adc_valores, freq_amostragem, freq_amostragem)
                 elif opcao == '0':
                     print("Saindo.")
                     break
