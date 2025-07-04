@@ -37,7 +37,8 @@ cputimer1.$name           = "myCPUTIMER0";
 cputimer1.startTimer      = true;
 cputimer1.enableInterrupt = true;
 cputimer1.emulationMode   = "CPUTIMER_EMULATIONMODE_RUNFREE";
-cputimer1.timerPeriod     = 39999;
+cputimer1.timerPrescaler  = 1;
+cputimer1.timerPeriod     = 199999;
 
 cputimer2.$name                    = "myCPUTIMER1";
 cputimer2.cputimerBase             = "CPUTIMER1_BASE";

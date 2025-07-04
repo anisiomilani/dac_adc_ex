@@ -161,8 +161,8 @@ void CPUTIMER_init(){
 
 void myCPUTIMER0_init(){
 	CPUTimer_setEmulationMode(myCPUTIMER0_BASE, CPUTIMER_EMULATIONMODE_RUNFREE);
-	CPUTimer_setPreScaler(myCPUTIMER0_BASE, 0U);
-	CPUTimer_setPeriod(myCPUTIMER0_BASE, 39999U);
+	CPUTimer_setPreScaler(myCPUTIMER0_BASE, 1U);
+	CPUTimer_setPeriod(myCPUTIMER0_BASE, 199999U);
 	CPUTimer_enableInterrupt(myCPUTIMER0_BASE);
 	CPUTimer_stopTimer(myCPUTIMER0_BASE);
 

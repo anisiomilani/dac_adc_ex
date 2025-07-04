@@ -9,8 +9,10 @@
 //
 // Main
 //
+// o tamanho do buffer adc tem que ser multiplo da frequência amostragem dividido pela frequência fundamental
+// resolução da fft é dividir a frequencia de amostragem pela fundamental
 #define TAM_BUFFER_DAC 200
-#define TAM_BUFFER_ADC  TAM_BUFFER_DAC
+#define TAM_BUFFER_ADC  200
 extern uint16_t dac_buffer[];
 volatile uint16_t adc_buffer[TAM_BUFFER_ADC];
 volatile float gain = 1.0f;
@@ -71,12 +73,12 @@ void main(void)
 
                            protocolReceiveVector(SCI0_BASE, g_vetor, num_elem);
                            g_vetor_qtd = num_elem; //salvo a quantidade de valores recebidos
-                           cnt_adc = 0;  // reinicia a coleta
+                           //cnt_adc = 0;  // reinicia a coleta
                            break;
                        }
                        case CMD_SEND_VECTOR:
                        {
-                           protocolSendVector(SCI0_BASE, adc_buffer, g_vetor_qtd); // Envia vetor
+                           protocolSendVector(SCI0_BASE, adc_buffer, TAM_BUFFER_ADC); // Envia vetor
                            break;
                        }
                    }
@@ -91,13 +93,13 @@ void main(void)
 
 __interrupt void INT_ADC0_1_ISR(void)
 {
-   // static uint16_t cnt_adc =0;
-   //cnt_adc = (cnt_adc+1)%TAM_BUFFER_ADC;
-    if (g_vetor_qtd > 0)
-       {
-            cnt_adc = (cnt_adc+1)%g_vetor_qtd;
+    static uint16_t cnt_adc =0;
+   cnt_adc = (cnt_adc+1)%TAM_BUFFER_ADC;
+   // if (g_vetor_qtd > 0)
+     //  {
+    //        cnt_adc = (cnt_adc+1)%g_vetor_qtd;
             adc_buffer[cnt_adc] = ADC_readResult(ADC0_RESULT_BASE, ADC0_SOC0);
-       }
+    //   }
     ADC_clearInterruptStatus(ADC0_BASE, ADC_INT_NUMBER1);
     Interrupt_clearACKGroup(INT_ADC0_1_INTERRUPT_ACK_GROUP);
 //cada vez que amostrar coloca um valor novo no adc_buffer
@@ -109,12 +111,12 @@ __interrupt void INT_myCPUTIMER1_ISR(void)
 {
     static uint16_t cnt_dac = 0;
    // DAC_setShadowValue(DAC0_BASE, (uint16_t) (gain*dac_buffer[cnt_dac]));
-    if (g_vetor_qtd > 0)
-    {
+    //if (g_vetor_qtd > 0)
+    //{
         DAC_setShadowValue(DAC0_BASE, (uint16_t)(gain * g_vetor[cnt_dac]));
-        // cnt_dac = (cnt_dac+1)%TAM_BUFFER_DAC;
-        cnt_dac = (cnt_dac+1)%g_vetor_qtd;
-    }
+        cnt_dac = (cnt_dac+1)%TAM_BUFFER_DAC;
+      // cnt_dac = (cnt_dac+1)%g_vetor_qtd;
+    //}
     // 0+10%200 o resto da diviao ate chegar em 19999+1 %200 o resto torna zero
 }
 
@@ -132,4 +134,6 @@ __interrupt void INT_SCI0_RX_ISR(void)
 
     Interrupt_clearACKGroup(INT_SCI0_RX_INTERRUPT_ACK_GROUP);
 }
+
+
 
